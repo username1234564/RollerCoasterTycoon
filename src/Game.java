@@ -6,6 +6,7 @@ public class Game implements KeyListener{
     JFrame frame;
     JPanel panel;
     Vector cameraPos;
+    Grid grid = new Grid(30);
     
     public Game(){
         frame = new JFrame("name");
@@ -16,15 +17,15 @@ public class Game implements KeyListener{
         };
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
-        frame.setSize(400, 400);
+        frame.setSize(900, 900);
         frame.add(panel);
-        cameraPos = new Vector(0, 60);
+        cameraPos = new Vector(0, 60, 0);
         
 
         frame.addKeyListener(this);
         frame.setFocusable(true);
 
-
+        grid.build(new Building("src/Transparent Tile Cube.png"), new Vector(1, 3, 0)); 
     }   
 
     public void start(){
@@ -46,9 +47,16 @@ public class Game implements KeyListener{
 
 
     public void redraw(Graphics g){
-        for(int i = 0; i<30; i++){
-            g.drawLine(0 - cameraPos.x, 32 * i - cameraPos.y, 320 - cameraPos.x,  32 * i + 100 - cameraPos.y);
-            g.drawLine( 0 - cameraPos.x, 32 * i + 100 - cameraPos.y, 320 - cameraPos.x, 32 * i - cameraPos.y);
+        for(int i = 0; i<=grid.size; i++){
+            g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, i * Tile.HEIGHT / 2 - grid.size / 2 * Tile.HEIGHT - cameraPos.y);
+            g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, - i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, -i * Tile.HEIGHT / 2 + grid.size / 2 * Tile.HEIGHT - cameraPos.y);
+        }
+        for(int i = 0; i<grid.size; i++){
+            for(int j = 0; j<grid.size; j++){
+                if(grid.getTile(new Vector(i, j, 0)).building != null){
+                    g.drawImage(grid.getTile(new Vector(i, j, 0)).building.image, i, j, 0);
+                }
+            }
         }
         
     }
@@ -72,5 +80,9 @@ public class Game implements KeyListener{
     public void keyReleased(KeyEvent e) {
 
     }
-    
+/* 
+    public Vector worldToGrid(Vector worldPosition){
+        
+    }
+  */  
 }
