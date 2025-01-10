@@ -24,8 +24,11 @@ public class Game implements KeyListener{
 
         frame.addKeyListener(this);
         frame.setFocusable(true);
-
-        grid.build(new Building("src/Transparent Tile Cube.png"), new Vector(1, 3, 0)); 
+        for(int i = grid.size-1; i>=0; i--){
+            for(int j = 0; j<grid.size; j++){
+                grid.build(new Building("src/Transparent Tile Cube.png"), new Vector(i, j, 0)); 
+            }
+        }
     }   
 
     public void start(){
@@ -51,10 +54,11 @@ public class Game implements KeyListener{
             g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, i * Tile.HEIGHT / 2 - grid.size / 2 * Tile.HEIGHT - cameraPos.y);
             g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, - i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, -i * Tile.HEIGHT / 2 + grid.size / 2 * Tile.HEIGHT - cameraPos.y);
         }
-        for(int i = 0; i<grid.size; i++){
+        for(int i = grid.size-1; i>=0; i--){
             for(int j = 0; j<grid.size; j++){
                 if(grid.getTile(new Vector(i, j, 0)).building != null){
-                    g.drawImage(grid.getTile(new Vector(i, j, 0)).building.image, i, j, 0);
+                    Vector v = gridToWorld(new Vector(i, j, 0));
+                    g.drawImage(grid.getTile(new Vector(i, j, 0)).building.image, v.x, v.y - Tile.HEIGHT, null);
                 }
             }
         }
@@ -80,9 +84,19 @@ public class Game implements KeyListener{
     public void keyReleased(KeyEvent e) {
 
     }
-/* 
-    public Vector worldToGrid(Vector worldPosition){
+
+    public Vector worldToGrid(Vector v){
+        int v.x = ((x + cameraPos.x) - v.y * Tile.WIDTH / 2) / Tile.WIDTH / 2;
         
+        int v.y = (( + cameraPos.x) - v.y * Tile.WIDTH / 2) / Tile.WIDTH / 2;
+        y = - ((x + cameraPos.x) - v.y * Tile.WIDTH / 2) / Tile.WIDTH / 2 * Tile.HEIGHT/2 + v.y * Tile.HEIGHT / 2 - cameraPos.y;
+        (y + cameraPos.y) 
     }
-  */  
+  
+  
+    public Vector gridToWorld(Vector v){
+        int x = v.x * Tile.WIDTH/2 + v.y * Tile.WIDTH / 2 - cameraPos.x;
+        int y = - v.x * Tile.HEIGHT/2 + v.y * Tile.HEIGHT / 2- cameraPos.y;
+        return new Vector(x, y, 0);
+    }
 }
