@@ -8,4 +8,8 @@ public class Vector {
         this.y = y;
         this.z = z;
     }
+
+    public String toString(){
+        return "" + x + ", " + y + ", " + z;
+    }
 }
