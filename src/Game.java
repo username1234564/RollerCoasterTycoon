@@ -2,11 +2,12 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 
-public class Game implements KeyListener, MouseListener{
+public class Game implements KeyListener, MouseListener, MouseMotionListener{
     JFrame frame;
     JPanel panel;
     Vector cameraPos;
     Grid grid = new Grid(30);
+    Vector mousePosition = new Vector(0, 0, 0);
     
     public Game(){
         frame = new JFrame("name");
@@ -24,6 +25,7 @@ public class Game implements KeyListener, MouseListener{
         frame.addMouseListener(this);
         frame.addKeyListener(this);
         frame.setFocusable(true);
+        frame.addMouseMotionListener(this);
         for(int i = grid.size-1; i>=0; i--){
             for(int j = 0; j<grid.size; j++){
                 //grid.build(new Building("src/Cube.png"), new Vector(i, j, 0)); 
@@ -45,7 +47,7 @@ public class Game implements KeyListener, MouseListener{
     }
 
     public void update(double delta){
-        
+        System.out.println(worldToGrid(mousePosition));
     }
 
 
@@ -86,19 +88,49 @@ public class Game implements KeyListener, MouseListener{
     }
 
     public Vector worldToGrid(Vector v) {
-        v.x = v.x - v.x % Tile.WIDTH;
-        v.y = v.y - v.y % Tile.HEIGHT;
-        int y = ((2 * (v.y + cameraPos.y)) / Tile.HEIGHT + (v.x + cameraPos.x) / (Tile.WIDTH / 2)) / 2;
-        int x = ((v.x + cameraPos.x) / (Tile.WIDTH / 2)) - y;
+        //v.x = v.x - v.x % (Tile.WIDTH * 2);
+        //v.y = v.y - v.y % (Tile.HEIGHT * 2);
+        //int y = ((2 * (v.y + cameraPos.y)) / (Tile.HEIGHT / 2) + (v.x + cameraPos.x) / (Tile.WIDTH / 2)) / 2;
+        //int x = ((v.x + cameraPos.x) / (Tile.WIDTH / 2)) - y;
         
+        v = v.add(cameraPos);
+
+        /* 
+        Vector ve = snapToGrid(v);
+
+        int x = (ve.x / (Tile.WIDTH / 2) + ve.y / (Tile.HEIGHT / 2)) / 2;
+        int y = (ve.y / (Tile.HEIGHT / 2 ) - ve.x / (Tile.WIDTH / 2)) / 2;
         return new Vector(x, y, 0);
+        */
+        double slopeL1 = (double) Tile.HEIGHT / Tile.WIDTH;
+        double slopeL2 = (double) -Tile.HEIGHT / Tile.WIDTH;
+ 
+         double b1 = v.y - v.x * slopeL1;
+         double b2 = v.y - v.x * slopeL2;
+ 
+         double x2 = b1 / (slopeL2 - slopeL1);
+         double x = x2 / (Tile.WIDTH /2);
+         
+         double x1 = b2 / (slopeL1 - slopeL2);
+         double y = x1 / (Tile.HEIGHT /2);
+ 
+         return new Vector((int)y, (int)x, 0);
+         //double y2 = slopeL2 * x2;
+         
+        // double length2 = Math.sqrt(x2 * x2 + y2 * y2);
     }
     
-  
+    //public Vector snapToGrid(Vector v){
+ 
+
+    //}
   
     public Vector gridToWorld(Vector v){
-        int x = v.x * Tile.WIDTH/2 + v.y * Tile.WIDTH / 2 - cameraPos.x;
-        int y = - v.x * Tile.HEIGHT/2 + v.y * Tile.HEIGHT / 2- cameraPos.y;
+
+        int x = (v.x - v.y) * Tile.WIDTH / 2 + cameraPos.x;
+        int y = (v.x + v.y) * Tile.HEIGHT / 2 + cameraPos.y;
+        //int x = v.x * Tile.WIDTH/2 + v.y * Tile.WIDTH / 2 - cameraPos.x;
+        //int y = - v.x * Tile.HEIGHT/2 + v.y * Tile.HEIGHT / 2- cameraPos.y;
         return new Vector(x, y, 0);
     }
 
@@ -123,5 +155,13 @@ public class Game implements KeyListener, MouseListener{
 
     public void mouseExited(MouseEvent e) {
 
+    }
+
+    public void mouseDragged(MouseEvent e) {
+       
+    }
+
+    public void mouseMoved(MouseEvent e) {
+        mousePosition = new Vector(e.getX(), e.getY(), 0);
     }
 }
