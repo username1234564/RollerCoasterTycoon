@@ -9,12 +9,16 @@ import java.io.IOException;
 
 public class Building {
     BufferedImage image;
+    Vector offset;
+    Vector position;
      
-    public Building(String filePath){
+    public Building(String filePath, Vector offset, Vector position){
         try {
             image = ImageIO.read(new File(filePath));
         } catch (IOException e) {
             e.printStackTrace();
         }
+        this.offset = offset;
+        this.position = position;
     }
 }

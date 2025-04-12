@@ -6,11 +6,14 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     JFrame frame;
     JPanel panel;
     Vector cameraPos;
+    Vector cameraVelocity;
     Grid grid = new Grid(30);
     Vector mousePosition = new Vector(0, 0, 0);
+    Building ghost = new ArcadeMachine(new Vector(0, 0, 0));
+
     
     public Game(){
-        frame = new JFrame("name");
+        frame = new JFrame(" ult");
         panel = new JPanel(){
             public void paintComponent(Graphics g){
                 redraw(g);
@@ -21,16 +24,19 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         frame.setSize(900, 900);
         frame.add(panel);
         cameraPos = new Vector(0, 60, 0);
+        cameraVelocity = new Vector(0, 0, 0);
         
-        frame.addMouseListener(this);
+        panel.addMouseListener(this);
         frame.addKeyListener(this);
         frame.setFocusable(true);
         frame.addMouseMotionListener(this);
-        for(int i = grid.size-1; i>=0; i--){
-            for(int j = 0; j<grid.size; j++){
-                //grid.build(new Building("src/Cube.png"), new Vector(i, j, 0)); 
-            }
-        }
+
+
+        grid.build(new ArcadeMachine(new Vector(1, 1, 2)));
+                 
+        grid.build(new Floor(new Vector(3, 4, 3)));
+
+        grid.build(new ArcadeMachine(new Vector(6, 2, 1)));
     }   
     
     public void start(){
@@ -47,7 +53,10 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     }
 
     public void update(double delta){
-        System.out.println(worldToGrid(mousePosition));
+        cameraPos = cameraPos.add(cameraVelocity);
+        mousePosition = new Vector(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y, 0);  //mouse position is based on screen
+        mousePosition = mousePosition.subtract(new Vector(panel.getLocationOnScreen().x, panel.getLocationOnScreen().y, 0));
+        System.out.println(mousePosition);
     }
 
 
@@ -57,13 +66,6 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         int h = Tile.HEIGHT / 2;
 
         for(int i = 0; i<=grid.size; i++){
-
-            
-            /* 
-            g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, i * Tile.HEIGHT / 2 - grid.size / 2 * Tile.HEIGHT - cameraPos.y);
-            g.drawLine(i * Tile.WIDTH / 2 - cameraPos.x, - i * Tile.HEIGHT / 2 - cameraPos.y, i * Tile.WIDTH / 2 + grid.size / 2 * Tile.WIDTH - cameraPos.x, -i * Tile.HEIGHT / 2 + grid.size / 2 * Tile.HEIGHT - cameraPos.y);
-            */
-            
             Vector origin = new Vector(w * i, h * i, 0).subtract(cameraPos);
             Vector end = origin.add(new Vector(w * grid.size, -h * grid.size, 0));
             g.drawLine(origin.x, origin.y, end.x, end.y);
@@ -74,12 +76,22 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         }
         for(int i = grid.size-1; i>=0; i--){
             for(int j = 0; j<grid.size; j++){
-                if(grid.getTile(new Vector(i, j, 0)).building != null){
+                Building building = grid.getTile(new Vector(i, j, 0)).building;
+                if(building != null){
                     Vector v = gridToWorld(new Vector(i, j, 0));
-                    g.drawImage(grid.getTile(new Vector(i, j, 0)).building.image, v.x, v.y - Tile.HEIGHT, null);
+                    
+                    g.drawImage(building.image, v.x + building.offset.x, v.y + 32 - Tile.HEIGHT + building.offset.y - (building.position.z * 50), null); //the 30 is a counter offset
                 }
-            }
+            }          
         }
+
+        if(ghost == null)
+            return;
+        float alpha = (float) 0.5;
+        AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,alpha);
+        ((Graphics2D) g).setComposite(ac);
+        Vector v = gridToWorld(worldToGrid(mousePosition)); //snap to grid
+        g.drawImage(ghost.image, v.x + ghost.offset.x, v.y + 32 - Tile.HEIGHT + ghost.offset.y, null);
         
     }
 
@@ -88,85 +100,60 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     }
 
     public void keyPressed(KeyEvent e) {
+
         int keyCode = e.getKeyCode();
         if(keyCode == KeyEvent.VK_W)
-            cameraPos.y -= 5;
-        else if(keyCode == KeyEvent.VK_S)
-            cameraPos.y += 5;
-        else if(keyCode == KeyEvent.VK_A)
-            cameraPos.x -= 5;
-        else if(keyCode == KeyEvent.VK_D)
-            cameraPos.x += 5;
+            cameraVelocity.y = -5;
+        if(keyCode == KeyEvent.VK_S)
+            cameraVelocity.y = 5;
+        if(keyCode == KeyEvent.VK_A)
+            cameraVelocity.x = -5;
+        if(keyCode == KeyEvent.VK_D)
+            cameraVelocity.x = 5;
     }
 
     public void keyReleased(KeyEvent e) {
-
+        int keyCode = e.getKeyCode();
+        if(keyCode == KeyEvent.VK_W && cameraVelocity.y == -5)
+            cameraVelocity.y = 0;
+        if(keyCode == KeyEvent.VK_S && cameraVelocity.y == 5)
+            cameraVelocity.y = 0;
+        if(keyCode == KeyEvent.VK_A && cameraVelocity.x == -5)
+            cameraVelocity.x = 0;
+        if(keyCode == KeyEvent.VK_D && cameraVelocity.x == 5)
+            cameraVelocity.x = 0;
     }
 
     public Vector worldToGrid(Vector v) {
-        //v.x = v.x - v.x % (Tile.WIDTH * 2);
-        //v.y = v.y - v.y % (Tile.HEIGHT * 2);
-        //int y = ((2 * (v.y + cameraPos.y)) / (Tile.HEIGHT / 2) + (v.x + cameraPos.x) / (Tile.WIDTH / 2)) / 2;
-        //int x = ((v.x + cameraPos.x) / (Tile.WIDTH / 2)) - y;
-        
+        v.add(new Vector(0, -16, 0));
         v = v.add(cameraPos);
 
         int w = Tile.WIDTH / 2;
         int h = Tile.HEIGHT / 2;
         
-        double x = 0.5 * (v.x * 1.0 / w - v.y * 1.0 / h);
-        double y = 0.5 * (v.x * 1.0 / w + v.y * 1.0 / h);
-        /* 
-        Vector ve = snapToGrid(v);
+        double x = 0.5 * (v.x * 1.0 / w - v.y * (1.0 / h));
+        double y = 0.5 * (v.x * 1.0 / w + v.y * (1.0 / h));
 
-        int x = (ve.x / (Tile.WIDTH / 2) + ve.y / (Tile.HEIGHT / 2)) / 2;
-        int y = (ve.y / (Tile.HEIGHT / 2 ) - ve.x / (Tile.WIDTH / 2)) / 2;
-        return new Vector(x, y, 0);
-        
-        double slopeL1 = (double) Tile.HEIGHT / Tile.WIDTH;
-        double slopeL2 = (double) -Tile.HEIGHT / Tile.WIDTH;
- 
-         double b1 = v.y - v.x * slopeL1;
-         double b2 = v.y - v.x * slopeL2;
- 
-         double x2 = b1 / (slopeL2 - slopeL1);
-         double x = x2 / (Tile.WIDTH /2);
-         
-         double x1 = b2 / (slopeL1 - slopeL2);
-         double y = x1 / (Tile.HEIGHT /2);
-        */
-
-         return new Vector((int)x, (int)y, 0);
-         //double y2 = slopeL2 * x2;
-         
-        // double length2 = Math.sqrt(x2 * x2 + y2 * y2);
+         return new Vector((int)x, (int)y, v.z);
+       
     }
-    
-    //public Vector snapToGrid(Vector v){
- 
 
-    //}
-    
     public Vector gridToWorld(Vector v){
         int w = Tile.WIDTH / 2;
         int h = Tile.HEIGHT / 2;
         
-        //int x = (v.x - v.y) * Tile.WIDTH / 2 + cameraPos.x;
-        //int y = (v.x + v.y) * Tile.HEIGHT / 2 + cameraPos.y;
+        int x = w * (v.y + v.x) - cameraPos.x;
+        int y = h * (v.y - v.x) - cameraPos.y;
 
-        //int x = v.x * Tile.WIDTH/2 + v.y * Tile.WIDTH / 2 - cameraPos.x;
-        //int y = - v.x * Tile.HEIGHT/2 + v.y * Tile.HEIGHT / 2- cameraPos.y;
-
-        int x = w * (v.y + v.x) + cameraPos.x;
-        int y = h * (v.y - v.x) + cameraPos.y;
-
-        return new Vector(x, y, 0);
+        return new Vector(x, y, v.z);
     }
 
     public void mouseClicked(MouseEvent e) {
         int x = e.getX();
         int y = e.getY();
         System.out.println(worldToGrid(new Vector(x, y, 0)));
+        Vector v = worldToGrid(new Vector(x, y, 0));
+        grid.build(new ArcadeMachine(v));
     }
 
     public void mousePressed(MouseEvent e) {
@@ -191,7 +178,6 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     }
 
     public void mouseMoved(MouseEvent e) {
-        mousePosition = new Vector(e.getX(), e.getY(), 0).subtract(new Vector(7, 30, 0));
-        //System.out.println(mousePosition);
+
     }
 }

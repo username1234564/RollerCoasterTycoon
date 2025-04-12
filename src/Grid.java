@@ -14,8 +14,8 @@ public class Grid {
         }
     }
 
-    public void build(Building building, Vector position){
-        grid[position.x][position.y].building = building;
+    public void build(Building building){
+        grid[building.position.x][building.position.y].building = building;
     }
 
     public Tile getTile(Vector position){
