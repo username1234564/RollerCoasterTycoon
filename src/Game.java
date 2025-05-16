@@ -10,10 +10,12 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     Grid grid = new Grid(30);
     Vector mousePosition = new Vector(0, 0, 0);
     Building ghost = new ArcadeMachine(new Vector(0, 0, 0));
+    Vector lastCoasterTract = new Vector(0,1,0);
+
 
     
     public Game(){
-        frame = new JFrame(" ult");
+        frame = new JFrame("RollerCoasterTycoon");
         panel = new JPanel(){
             public void paintComponent(Graphics g){
                 redraw(g);
@@ -22,7 +24,12 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
         frame.setSize(900, 900);
+        //JLayeredPane lpane = new JLayeredPane();
+        //frame.add(lpane);
+        //lpane.add(panel);
+        //lpane.add(new Buildmenu());
         frame.add(panel);
+        //panel.add(new Buildmenu());
         cameraPos = new Vector(0, 60, 0);
         cameraVelocity = new Vector(0, 0, 0);
         
@@ -31,12 +38,8 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         frame.setFocusable(true);
         frame.addMouseMotionListener(this);
 
-
-        grid.build(new ArcadeMachine(new Vector(1, 1, 2)));
-                 
-        grid.build(new Floor(new Vector(3, 4, 3)));
-
-        grid.build(new ArcadeMachine(new Vector(6, 2, 1)));
+        grid.build(new RailTrack(new Vector(0, 1, 0), new Vector(0, 0, 0), new Vector(0, 2, 0)));
+        //grid.build(new RailTrack(new Vector(0, 3, 0), null, null));
     }   
     
     public void start(){
@@ -56,7 +59,6 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         cameraPos = cameraPos.add(cameraVelocity);
         mousePosition = new Vector(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y, 0);  //mouse position is based on screen
         mousePosition = mousePosition.subtract(new Vector(panel.getLocationOnScreen().x, panel.getLocationOnScreen().y, 0));
-        System.out.println(mousePosition);
     }
 
 
@@ -77,7 +79,7 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
         for(int i = grid.size-1; i>=0; i--){
             for(int j = 0; j<grid.size; j++){
                 Building building = grid.getTile(new Vector(i, j, 0)).building;
-                if(building != null){
+                if(building != null && building.position.equals(new Vector(i, j, 0))){
                     Vector v = gridToWorld(new Vector(i, j, 0));
                     
                     g.drawImage(building.image, v.x + building.offset.x, v.y + 32 - Tile.HEIGHT + building.offset.y - (building.position.z * 50), null); //the 30 is a counter offset
@@ -85,15 +87,25 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
             }          
         }
 
+        g.setColor(Color.RED);
+        g.fillRect(50, 50, 100, 100); // Positioned at (50,50), size 100x100
+
+        // If ghost is active, adjust color
+        if (ghost != null) {
+            g.setColor(Color.GREEN);
+            g.fillRect(50, 50, 100, 100); // Make green if ghost is activated
+        }
+
         if(ghost == null)
             return;
         float alpha = (float) 0.5;
-        AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,alpha);
+        AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,alpha); //taken fron stack overflow
         ((Graphics2D) g).setComposite(ac);
         Vector v = gridToWorld(worldToGrid(mousePosition)); //snap to grid
         g.drawImage(ghost.image, v.x + ghost.offset.x, v.y + 32 - Tile.HEIGHT + ghost.offset.y, null);
         
     }
+
 
     public void keyTyped(KeyEvent e) {
 
@@ -151,10 +163,47 @@ public class Game implements KeyListener, MouseListener, MouseMotionListener{
     public void mouseClicked(MouseEvent e) {
         int x = e.getX();
         int y = e.getY();
-        System.out.println(worldToGrid(new Vector(x, y, 0)));
+
+        // Check if click was inside the build menu square
+        if (x >= 50 && x <= 150 && y >= 50 && y <= 150) {
+            if (ghost == null) {
+                ghost = new ArcadeMachine(new Vector(0, 0, 0)); // Enable preview
+                System.out.println("Build enabled!");
+            } else {
+                ghost = null; // Disable ghost
+                System.out.println("Build disabled!");
+            }
+            frame.repaint(); // Refresh screen to update color
+            return;
+        }
+
+        // Convert mouse click to grid position
         Vector v = worldToGrid(new Vector(x, y, 0));
-        grid.build(new ArcadeMachine(v));
+
+        // If ghost mode is enabled, place a new arcade machine
+        if (v.x >= 0 && v.y >= 0 && ghost != null) {
+            grid.build(new ArcadeMachine(v));
+        } else {
+            // Check if the clicked tile contains an Arcade Machine
+            Building clickedBuilding = grid.getTile(v).building;
+            if (clickedBuilding instanceof ArcadeMachine) {
+                openBrickBreaker(); // Launch the mini-game
+            }
+        }
     }
+
+    public void openBrickBreaker() {
+        JFrame brickBreakerFrame = new JFrame("Brick Breaker Arcade");
+        brickBreakerFrame.setSize(400, 500);
+        brickBreakerFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        
+        BrickBreakerGame gamePanel = new BrickBreakerGame(); // The mini-game panel
+        brickBreakerFrame.add(gamePanel);
+        
+        brickBreakerFrame.setVisible(true);
+    }
+
+
 
     public void mousePressed(MouseEvent e) {
        

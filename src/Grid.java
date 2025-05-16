@@ -15,7 +15,18 @@ public class Grid {
     }
 
     public void build(Building building){
-        grid[building.position.x][building.position.y].building = building;
+        removeBuilding(getTile(building.position).building);
+        for(int i = 0; i < building.dimensions.x; i++)
+            for(int j = 0; j < building.dimensions.y; j++)
+                grid[building.position.x + i][building.position.y + j].building = building;
+    }
+
+    public void removeBuilding(Building building){
+        if(building == null)
+            return;
+        for(int i = 0; i < building.dimensions.x; i++)
+            for(int j = 0; j < building.dimensions.y; j++)
+               grid[building.position.x + i][building.position.y + j].building = null;
     }
 
     public Tile getTile(Vector position){

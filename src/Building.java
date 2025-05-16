@@ -11,14 +11,20 @@ public class Building {
     BufferedImage image;
     Vector offset;
     Vector position;
+    Vector dimensions;
      
-    public Building(String filePath, Vector offset, Vector position){
+    public Building(String filePath, Vector offset, Vector position, Vector dimensions){
+        setImage(filePath);
+        this.offset = offset;
+        this.position = position;
+        this.dimensions = dimensions;
+    }
+
+    public void setImage(String filePath){
         try {
             image = ImageIO.read(new File(filePath));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.offset = offset;
-        this.position = position;
     }
 }
